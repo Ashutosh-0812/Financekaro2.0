@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import SideNav from "./_components/SideNav";
 import DashboardHeader from "./_components/DashboardHeader";
 import { db } from "@/utils/dbConfig";
@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 function DashboardLayout({ children }) {
   const { user } = useUser();
   const router = useRouter();
+  const [isSideNavOpen, setIsSideNavOpen] = useState(false);
+
   useEffect(() => {
     user && checkUserBudgets();
   }, [user]);
@@ -20,19 +22,37 @@ function DashboardLayout({ children }) {
       .select()
       .from(Budgets)
       .where(eq(Budgets.createdBy, user?.primaryEmailAddress?.emailAddress));
-    console.log(result);
-    if (result?.length == 0) {
+    if (result?.length === 0) {
       router.replace("/dashboard/budgets");
     }
   };
+
   return (
-    <div>
-      <div className="fixed md:w-64 hidden md:block ">
+    <div className="min-h-screen flex">
+      {/* Mobile SideNav */}
+      {isSideNavOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Background overlay */}
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setIsSideNavOpen(false)}
+          ></div>
+          {/* Sidebar */}
+          <div className="relative w-64 bg-white dark:bg-gray-900 h-full z-50">
+            <SideNav onClose={() => setIsSideNavOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block fixed w-64 h-full border-r shadow-sm">
         <SideNav />
       </div>
-      <div className="md:ml-64 ">
-        <DashboardHeader />
-        {children}
+
+      {/* Main Content */}
+      <div className="flex-1 md:ml-64 flex flex-col">
+        <DashboardHeader onMenuClick={() => setIsSideNavOpen(true)} />
+        <main className="p-4">{children}</main>
       </div>
     </div>
   );
